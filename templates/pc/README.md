@@ -6,17 +6,19 @@ Clusters that were deployed using the HyperConverged Operator do not include
 support for this machine type. To allow Virtual Machines to request this
 machine type, this option should be manually added.
 
-# Update HCO
+# Update HCO (OpenShift Virtualization >= 4.8)
 
 It is necessary to add the relevant machine type to a list of permitted types.
-This will allow Virtual Machines to request the pc-i440fx machine type.
+This will allow Virtual Machines to request the pc-i440fx machine type:
 
-`$ oc annotate --overwrite -n openshift-cnv hco kubevirt-hyperconverged \
+```
+$ oc annotate --overwrite -n openshift-cnv hco kubevirt-hyperconverged \
   kubevirt.kubevirt.io/jsonpatch='[{"op": "add", \
     "path": "/spec/configuration/emulatedMachines", \
-    "value": ["q35*", "pc-q35*", "pc-i440fx-rhel7.6.0"] }]'`
+    "value": ["q35*", "pc-q35*", "pc-i440fx-rhel7.6.0"] }]'
+```
 
-# OpenShift Virtualization 2.6.X
+# Update KubeVirt Config Map (OpenShift Virtualization 2.6.X)
 
 The add the relevant machine type to a list of permitted types on OpenShift
 Virtualization 2.6.X kubevirt-config Config Map should be updated.
@@ -37,6 +39,6 @@ data:
 
 # Usage
 
-The provided template can be used to create a Virtual Machine
+The provided template can be used to create a Virtual Machine:
 
 `$ oc process --local -f templates/pc/rhel6-server-large-pc-i440fx.yaml`
