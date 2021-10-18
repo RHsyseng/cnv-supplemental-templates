@@ -17,3 +17,4 @@ runcmd:
   - sudo rm -f /etc/machine-id
   - sudo touch /etc/machine-id
   - sudo echo "vm.nr_hugepages = 1024" >> /etc/sysctl.conf && sysctl -p
+
