@@ -3,7 +3,9 @@ password: password
 chpasswd: { expire: False }
 ssh_pwauth: True
 bootcmd:
-  - dnf install -y tcpdump qemu-guest-agent iperf3 dmidecode nginx lldpad kernel-modules nmap dhcp sshpass podman ethtool libibverbs stress-ng iotop fio
+  - subscription-manager register --serverurl=subscription.rhsm.stage.redhat.com:443/subscription --baseurl=https://cdn.stage.redhat.com --username=<rhsm username>  --password=<rhsm password> --auto-attach
+  - dnf install -y qemu-guest-agent iperf3 kernel-modules dpdk dpdk-tools && dnf clean all
+  - subscription-manager unregister
 runcmd:
   - sudo systemctl enable qemu-guest-agent --now
   - sudo sed -i 's/listen       80;/listen       80;\n\tlisten       81;/g' /etc/nginx/nginx.conf
@@ -15,6 +17,3 @@ runcmd:
   - sudo rm -f /etc/machine-id
   - sudo touch /etc/machine-id
   - sudo echo "vm.nr_hugepages = 1024" >> /etc/sysctl.conf && sysctl -p
-  - sudo subscription-manager register --serverurl=subscription.rhsm.stage.redhat.com:443/subscription --baseurl=https://cdn.stage.redhat.com --username=<rhsm username>  --password=<rhsm password> --auto-attach
-  - sudo dnf install -y dpdk dpdk-tools
-  - sudo subscription-manager unregister

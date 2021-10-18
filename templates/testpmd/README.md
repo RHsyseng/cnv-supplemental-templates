@@ -44,14 +44,14 @@ podman push <destination repo>:$RHEL_VERSION-dpdk
 * In this example the image was tagged with a new tag $RHEL_VERSION-dpdk (i.e. 8.4-dpdk), so when pushed - it won't override the image in the repo that is already tagged as "8.4".
 
 * Important: If, for some reason, you need to override the result image and create a new one:
- - Remove the image qcow2 file, as it was overriden by the new image, which uses the new name.
- - Remove the image:
-```bash
-virsh destroy rhel-8.4
-virsh undefine rhel-8.4
-rm -rf rhel_build/ rhel-8.4.qcow2
-```
- - Copy the original image qcow2 file to this dir.
+  - Remove the image qcow2 file, as it was overriden by the new image, which uses the new name.
+  - Remove the image:
+  ```bash
+  virsh destroy rhel-8.4
+  virsh undefine rhel-8.4
+  rm -rf rhel_build/ rhel-8.4.qcow2
+  ```
+  - Copy the original image qcow2 file to the working directory.
 
 * To use this image in a VM spec - reference the image in the VM yaml (a usable VM yaml file exists here in `resource-specs` dir :
 ```yaml
@@ -62,8 +62,11 @@ rm -rf rhel_build/ rhel-8.4.qcow2
 ```yaml
           imagePullPolicy: Always
 ```
- You might also need to remove the image from the hosting node (on which the VMI ran), using "podman image rm <image ID>".
- Specifcally for RHEL - set resources.requests.memory to 4096M. If the memory request is not enough for the VM, you might get oom (out-of-memory) errors on VM console when it starts.
+ You might also need to remove the image from the hosting node (on which the VMI ran), using
+```bash
+podman image rm <image ID>
+```
+ Specifically for RHEL - set `resources.requests.memory` to 4096M. Otherwise, the memory request might not be enough for the VM, which will end with oom (out-of-memory) errors on VM console when it starts.
 
 
 ## Needed SR-IOV Openshift sources for the cluster
