@@ -11,6 +11,14 @@ if [ "$driver" == "vfio-pci" ]
 then
   echo "Driver is vfio-pci, no extra action needed."
   exit
+elif [[ "$driver" == *"mlx"* ]]
+then
+  echo "Driver is a Mellanox driver, please refer to https://doc.dpdk.org/guides/nics/mlx5.html#usage-example in order to replace it."
+  exit
+elif [ "$driver" != "iavf" ]
+then
+  echo "Driver is $driver, and cannot be handled here."
+  exit
 fi
 echo "driver is $driver"
 
@@ -32,7 +40,7 @@ modprobe vfio-pci
 
 # Enable unsafe IOMMU.
 echo 1 > /sys/module/vfio/parameters/enable_unsafe_noiommu_mode
-conf
+echo "options vfio enable_unsafe_noiommu_mode=1" > /etc/modprobe.d/vfio-noiommu.conf
 
 # Bind the DPDK NICs.
 dpdk-devbind.py -b vfio-pci $pci_addr

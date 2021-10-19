@@ -95,9 +95,11 @@ Note that `containerDisk` value should be replaced with the actual repo where th
 
 
 ## Extra steps on the running VM
-DPDK requires that the driver bound to the interface that uses it (the SR-IOV interface in the VM) is vfio-pci.
+DPDK requires that the driver bound to the interface that uses it (the SR-IOV interface in the VM) is one of few models.
+If this driver model is iavf, then the VF interface (i.e. the SR-IOV NIC in the VM) should be actively bound to an vfio-pci driver by the user.
 It might be, however, that the driver supported by the node is different. In that case, the user would have to actively replace the default driver (e.g. iavf) which is bound to the SR-IOV NIC in the VM.
-You can achieve that by running the scripts/change-nic-driver.sh script in the VM (copy its contents to the VM).
+This can be achieved by running the scripts/change-nic-driver.sh script in the VM (copy its contents to the VM).
+If the driver in use is a Mellanox driver - the script will exit, and the user should refer to [https://doc.dpdk.org/guides/nics/mlx5.html#usage-example] (https://doc.dpdk.org/guides/nics/mlx5.html#usage-example).
 * Note: You should run this script as root user.
 ```bash
 sudo su
@@ -110,7 +112,8 @@ The steps run by this script are as follows:
 driver: iavf
 ...
 ```
-The driver is indeed not vfio-pic, therefore it should be replaced.
+The driver is indeed not vfio-pci, therefore it should be replaced.
+If it's a Mellanox driver (should have "mlx" in its name), then refer to [https://doc.dpdk.org/guides/nics/mlx5.html#usage-example] (https://doc.dpdk.org/guides/nics/mlx5.html#usage-example) for instructions.
 1. Deactivate the NIC to be bound to DPDK.
 ```bash
 ip link set down dev sriov1
