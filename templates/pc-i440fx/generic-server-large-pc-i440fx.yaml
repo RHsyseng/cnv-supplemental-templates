@@ -7,9 +7,9 @@ metadata:
     description: >-
       Template for guests which are not compatible with the q35 machine type.
     tags: "hidden,kubevirt,virtualmachine,linux"
-    openshift.io/provider-display-name: "KubeVirt"
-    openshift.io/documentation-url: "https://github.com/kubevirt/common-templates"
-    openshift.io/support-url: "https://github.com/kubevirt/common-templates/issues"
+    openshift.io/provider-display-name: "Community"
+    openshift.io/documentation-url: "https://github.com/RHsyseng/cnv-supplemental-templates"
+    openshift.io/support-url: "https://github.com/RHsyseng/cnv-supplemental-templates/issues"
     template.openshift.io/bindable: "false"
     template.kubevirt.io/version: v1alpha1
     defaults.template.kubevirt.io/disk: rootdisk
