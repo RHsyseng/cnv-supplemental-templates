@@ -25,7 +25,7 @@ metadata:
     workload.template.kubevirt.io/server-pc-i440fx: "true"
     flavor.template.kubevirt.io/large: "true"
 objects:
-- apiVersion: kubevirt.io/v1alpha3
+- apiVersion: kubevirt.io/v1
   kind: VirtualMachine
   metadata:
     name: ${NAME}
