@@ -1,0 +1,20 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: sriov-network-node-policy-template
+objects:
+- apiVersion: sriovnetwork.openshift.io/v1
+  kind: SriovNetwork
+  metadata:
+    name: sriov-test-network
+    namespace: openshift-sriov-network-operator
+  spec:
+    networkNamespace: ${NAMESPACE}
+    resourceName: ${RESOURCE_NAME}
+parameters:
+- description: Resource name of the SR-IOV network device plug-in
+  name: RESOURCE_NAME
+  value: sriov_net
+- description: Target namespace where to create the VM
+  name: NAMESPACE
+  value: sriov-dpdk-ns

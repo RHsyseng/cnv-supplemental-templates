@@ -16,5 +16,6 @@ runcmd:
   - rpm -q kernel-core | sort | head -1 | xargs sudo rpm -e
   - sudo rm -f /etc/machine-id
   - sudo touch /etc/machine-id
-  - sudo echo "vm.nr_hugepages = 1024" >> /etc/sysctl.conf && sysctl -p
+  - sudo dpdk-testpmd
+  - curl https://raw.githubusercontent.com/RHsyseng/cnv-supplemental-templates/77d5240849693f89760991d0805bb1f2ca719349/templates/testpmd/scripts/change-nic-driver.sh --output /usr/sbin/change-nic-driver.sh
 
