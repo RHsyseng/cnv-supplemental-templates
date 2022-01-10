@@ -23,15 +23,14 @@ export RHEL_VERSION=8.4
 ```bash
 dnf install -y cloud-utils docker-ce virt-install qemu-img
 ```
+- In `bootcmd` section of `user-data` - set the RHSM (Red Hat Subscription Manager) `--username` and `--password`.
 - Run
 ```bash
 ./build.sh $RHEL_IMAGE $RHEL_VERSION
 ```
-- After the image loads and the VM runs - check that the image is created as you expect it, for example:
- Run "sudo dpdk-testpmd" and verify it runs successfully.
 - Exit the image gracefully with
 ```bash
-shutdown -h now".
+shutdown -h now
 ```
 - Tag and push the image:
 ```bash
@@ -70,11 +69,18 @@ podman image rm <image ID>
 
 
 ## Needed SR-IOV Openshift sources for the cluster
+Create new working namespace
+
+```bash
+oc create ns sriov-dpdk-ns
+```
 If not yet applied - you should apply the SR-IOV network resources:
 ```bash
-oc apply -f SriovNetworkNodePolicy.yaml
+oc project openshift-sriov-network-operator
+oc process -f SriovNetworkNodePolicy-template.yaml | oc apply -f -
+oc project sriov-dpdk-ns
 ```
-Few values that need to be set in the policy resource:
+This policy resource is a template, so you might need to set some of its parameters, e.g.:
 1. pfNames: Change according to the name of the PF interface on the hosting node.
 2. rootDevices address: The device address of the PF can be retrieved by running
 ```bash
@@ -85,24 +91,25 @@ and retrieving the value of 'bus-info'
 
 
 ```bash
-oc apply -f SriovNetwork.yaml
+oc process -f SriovNetwork-template.yaml | oc apply -f -
 ```
-An example of the VM that can be created based on the above configurations is in this repo:
+* Important: Before creating the VM, please verify that hugepages are enabled on the hosting cluster node.
+ Note that OS_HUGEPAGES_PAGE_SIZE, which value is in MiB must be set in accordance to VM_HUGEPAGES_PAGE_SIZE.
+
+An example of a VM template that can be created based on the above configurations is in this repo:
 ```bash
-oc apply -f sriov-vm1.yaml
+oc process -f sriov-vm-template.yaml | oc apply -f -
+virtctl start sriov-vm1
 ```
-Note that `containerDisk` value should be replaced with the actual repo where the base image is located.
+Like the SriovNetworkNodePolicy resource, this is also a template, so you might need to set some of its parameters,
+e.g. replacing the value of `containerDisk.image` with the actual repo where the base image is located.
+Note that it might take a few minutes for the VM to start, until its DataVolume is created and image is downloaded.
 
 
 ## Extra steps on the running VM
 DPDK requires that the driver bound to the interface that uses it (the SR-IOV interface in the VM) is vfio-pci.
-It might be, however, that the driver supported by the node is different. In that case, the user would have to actively replace the default driver (e.g. iavf) which is bound to the SR-IOV NIC in the VM.
-You can achieve that by running the scripts/change-nic-driver.sh script in the VM (copy its contents to the VM).
-* Note: You should run this script as root user.
-```bash
-sudo su
-```
-
+It might be, however, that the driver supported by the node is different. To handle this case, a script is run on the VM start-up, and actively replaces the default driver (e.g. iavf) which is bound to the SR-IOV NIC in the VM.
+The script is `/usr/sbin/change-nic-driver.sh`, and is part of the RHEL image.
 The steps run by this script are as follows:
 1. Find the driver type of the SR-IOV interface.
 ```bash
@@ -110,7 +117,7 @@ The steps run by this script are as follows:
 driver: iavf
 ...
 ```
-The driver is indeed not vfio-pic, therefore it should be replaced.
+The driver is indeed not vfio-pci, therefore it should be replaced.
 1. Deactivate the NIC to be bound to DPDK.
 ```bash
 ip link set down dev sriov1
@@ -152,6 +159,10 @@ lscpu
 NUMA node0 CPU(s):   0,1
 
 ```
+Now run the test, with the CPUs list as the value of the `-l` argument:
 ```bash
-dpdk-testpmd -l 0,1 -w 0000:06:00.0
+# First retrieve the NIC's PCI slot address
+vf_pci_address=$(dpdk-devbind.py --status | grep -v Active | grep 0000 | cut -d ' ' -f 1 | paste -sd ' ')
+sudo dpdk-testpmd -l 0,1 -w $vf_pci_address
 ```
+

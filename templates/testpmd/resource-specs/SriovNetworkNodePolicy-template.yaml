@@ -1,0 +1,42 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: sriov-network-node-policy-template
+objects:
+- apiVersion: sriovnetwork.openshift.io/v1
+  kind: SriovNetworkNodePolicy
+  metadata:
+    name: test-sriov-policy
+    namespace: openshift-sriov-network-operator
+  spec:
+    deviceType: vfio-pci
+    mtu: ${{PF_MTU}}
+    nicSelector:
+      pfNames:
+      - ${PF_NIC_NAME}
+      rootDevices:
+      - ${PF_PCI_ADDRESS}
+    nodeSelector:
+      feature.node.kubernetes.io/network-sriov.capable: 'true'
+    numVfs: ${{NUM_VFS}}
+    priority: ${{PRIORITY}}
+    resourceName: ${RESOURCE_NAME}
+parameters:
+- description: PF NIC on the node
+  name: PF_NIC_NAME
+  generate: expression
+  from: '[\w]'
+- description: PF NIC PCI address (can be retrieved using "ethtool -i <PF NIC>" on the node).
+  name: PF_PCI_ADDRESS
+- description: Resource name of the SR-IOV network device plug-in
+  name: RESOURCE_NAME
+  value: sriov_net
+- description: Number of VFs to create under the PF
+  name: NUM_VFS
+  value: "10"
+- description: Priority (optional)
+  name: PRIORITY
+  value: "99"
+- description: MTU (of Physical Function interface)
+  name: PF_MTU
+  value: "9000"

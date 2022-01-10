@@ -32,7 +32,7 @@ modprobe vfio-pci
 
 # Enable unsafe IOMMU.
 echo 1 > /sys/module/vfio/parameters/enable_unsafe_noiommu_mode
-conf
+echo "options vfio enable_unsafe_noiommu_mode=1" > /etc/modprobe.d/vfio-noiommu.conf
 
 # Bind the DPDK NICs.
 dpdk-devbind.py -b vfio-pci $pci_addr

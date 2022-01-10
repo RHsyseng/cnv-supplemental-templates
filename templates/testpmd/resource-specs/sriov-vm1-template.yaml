@@ -1,0 +1,131 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: dpdk-vm-template
+objects:
+- apiVersion: kubevirt.io/v1
+  kind: VirtualMachine
+  metadata:
+    annotations:
+      openshift.io/display-name: "RHEL VM with SR-IOV-backed NIC and DPDK."
+      description: >-
+        Template for RHEL 8.4 VM, with a secondary interface backed by an SR-IOV node NIC.
+        Involves replacing the default NIC driver (iavf) to vfio-pci, to enable running DPDK.
+      openshift.io/documentation-url: "https://github.com/RHsyseng/cnv-supplemental-templates/tree/main/templates/testpmd"
+    name: ${NAME}
+    namespace: ${NAMESPACE}
+    labels:
+      app: ${NAME}
+      vm.kubevirt.io/template: dpdk-vm-template
+  spec:
+    dataVolumeTemplates:
+    - apiVersion: cdi.kubevirt.io/v1beta1
+      kind: DataVolume
+      metadata:
+        name: ${NAME}
+      spec:
+        source:
+          registry:
+            pullMethod: node
+            url: ${IMAGE_URL}
+        storage:
+          resources:
+            requests:
+              storage: ${DV_SIZE}
+    running: false
+    template:
+      spec:
+        domain:
+          cpu:
+            cores: ${{NUM_OF_CORES}}
+          devices:
+            disks:
+            - disk:
+                bus: virtio
+              name: ${NAME}
+            - disk:
+                bus: virtio
+              name: cloudinitdisk
+            interfaces:
+            - masquerade: {}
+              name: default
+            - macAddress: ${SECONDARY_MAC}
+              name: sriov-test-network
+              sriov: {}
+            rng: {}
+          memory:
+            guest: ${MEMORY}
+            hugepages:
+              pageSize: ${VM_HUGEPAGES_SIZE}
+          resources:
+            requests:
+              memory: ${MEMORY_OVERHEAD}
+        networks:
+        - name: default
+          pod: {}
+        - multus:
+            networkName: ${NAMESPACE}/sriov-test-network
+          name: sriov-test-network
+        nodeSelector:
+          feature.node.kubernetes.io/network-sriov.capable: "true"
+        terminationGracePeriodSeconds: 180
+        volumes:
+        - dataVolume:
+            name: ${NAME}
+          name: ${NAME}
+        - cloudInitNoCloud:
+            networkData: |
+              ethernets:
+                '1':
+                  match:
+                    macaddress: ${SECONDARY_MAC}
+                  set-name: sriov1
+              version: 2
+            userData: |-
+              #cloud-config
+              chpasswd:
+                expire: false
+              password: ${CLOUD_USER_PASSWORD}
+              runcmd:
+              - sudo echo "vm.nr_hugepages = ${GUEST_OS_HUGEPAGES_SIZE}" >> /etc/sysctl.conf && sysctl -p
+              - sudo sh /usr/sbin/change-nic-driver.sh
+          name: cloudinitdisk
+parameters:
+- description: VM name (also used to name the DataVolume, where the VM image is stored).
+  name: NAME
+  value: sriov-vm1
+- description: Image (source container-disk) URL 
+  name: IMAGE_URL
+  required: true
+- description: Number of cores (CPUs)
+  name: NUM_OF_CORES
+  value: "2"
+- description: SR-IOV interface MAC address
+  name: SECONDARY_MAC
+  generate: expression
+  from: '02:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}'
+- description: Target namespace where to create the VM
+  name: NAMESPACE
+  value: sriov-dpdk-ns
+- description: Storage size for the DataVolume (to store the VM image)
+  name: DV_SIZE
+  value: 10Gi
+- description: Randomized password for the cloud-init user cloud-user
+  from: '[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}'
+  generate: expression
+  name: CLOUD_USER_PASSWORD
+- description: Page size of huge pages
+  displayName: Huge page size
+  name: VM_HUGEPAGES_SIZE
+  value: 1Gi
+- description: Hugepages size (in MiB), configured during provision of the guest VM. Must be set in respect to VM_HUGEPAGES_SIZE.
+  displayName: Huge page size MiB
+  name: GUEST_OS_HUGEPAGES_SIZE
+  value: "1024"
+- description: Memory request. Set it according to the size used for creating the image (the "--memory" value in image-source/build.sh).
+  name: MEMORY
+  value: 4Gi
+- description: Total amount of memory overhead for qemu, which is the sum of the actual memory needed ($MEMORY) + extra reserved memory.
+  displayName: Memory Overhead
+  name: MEMORY_OVERHEAD
+  value: 8Gi
