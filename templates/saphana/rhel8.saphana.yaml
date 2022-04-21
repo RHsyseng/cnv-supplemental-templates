@@ -66,6 +66,7 @@ objects:
         labels:
           kubevirt.io/domain: ${NAME}
           kubevirt.io/size: tiny
+          app: ${NAME}
       spec:
         domain:
           cpu:
@@ -148,6 +149,17 @@ objects:
           name: cloudinitdisk
         - downwardMetrics: {}
           name: downwardmetrics
+- apiVersion: migrations.kubevirt.io/v1alpha1
+  kind: MigrationPolicy
+  metadata:
+    name: ${NAME}
+  spec:
+    allowAutoConverge: true
+    allowPostCopy: false
+    selectors:
+      virtualMachineInstanceSelector:
+        matchLabels:
+          app: ${NAME}
 parameters:
 - description: Name for the new VM
   displayName: Name
