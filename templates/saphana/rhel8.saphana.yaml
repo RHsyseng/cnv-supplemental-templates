@@ -104,7 +104,8 @@ objects:
               sriov: {}
             - name: sriov-net3
               sriov: {}
-            networkInterfaceMultiqueue: true
+            # Workaround for https://bugzilla.redhat.com/2048556
+            # networkInterfaceMultiqueue: true
           ioThreadsPolicy: auto
           machine:
             type: pc-q35-rhel8.4.0
