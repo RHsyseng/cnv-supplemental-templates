@@ -3,10 +3,10 @@ kind: Template
 metadata:
   annotations:
     defaults.template.kubevirt.io/disk: rootdisk
-    description: Template for Red Hat Enterprise Linux 8.4 for SAP HANA workloads. Please consult the SAP HANA guide for node setup requirements.
+    description: Template for Red Hat Enterprise Linux 8.6 for SAP HANA workloads. Please consult the SAP HANA guide for node setup requirements.
     iconClass: icon-rhel
-    name.os.template.kubevirt.io/rhel8.4: Red Hat Enterprise Linux 8.0 or higher
-    openshift.io/display-name: Red Hat Enterprise Linux 8.4 VM for SAP HANA workloads
+    name.os.template.kubevirt.io/rhel8.6: Red Hat Enterprise Linux 8.0 or higher
+    openshift.io/display-name: Red Hat Enterprise Linux 8.6 VM for SAP HANA workloads
     openshift.io/documentation-url: https://github.com/RHsyseng/cnv-supplemental-templates/templates/saphana/README.md
     openshift.io/provider-display-name: Red Hat - Tech Preview
     openshift.io/support-url: https://github.com/RHsyseng/cnv-supplemental-templates/issues
@@ -18,7 +18,7 @@ metadata:
   labels:
     app.kubernetes.io/component: templating
     flavor.template.kubevirt.io/tiny: "true"
-    os.template.kubevirt.io/rhel8.4: "true"
+    os.template.kubevirt.io/rhel8.6: "true"
     template.kubevirt.io/type: base
     workload.template.kubevirt.io/saphana: "true"
   name: rhel8-saphana-tiny
@@ -108,7 +108,7 @@ objects:
             # networkInterfaceMultiqueue: true
           ioThreadsPolicy: auto
           machine:
-            type: pc-q35-rhel8.4.0
+            type: pc-q35-rhel8.6.0
           memory:
             guest: ${MEMORY}
             hugepages:
@@ -209,7 +209,7 @@ parameters:
 - description: Name of the source container disk to import
   displayName: Source container disk
   name: SRC_CONTAINERDISK
-  value: docker://registry.redhat.io/rhel8/rhel-guest-image:8.4.0
+  value: docker://registry.redhat.io/rhel8/rhel-guest-image:8.6.0
 - description: Randomized password for the cloud-init user cloud-user
   displayName: Cloud user password
   from: '[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}'
