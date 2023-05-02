@@ -1,0 +1,150 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  annotations:
+    description: SAP template
+    tags: kubevirt,ocp,template,linux,virtualmachine,sap
+    template.kubevirt.io/provider: Red Hat
+    template.kubevirt.io/provider-url: 'https://www.redhat.com'
+    openshift.io/display-name: SAP on RHEL 8.0+ VM
+    operator-sdk/primary-resource-type: SSP.ssp.kubevirt.io
+    defaults.template.kubevirt.io/disk: rootdisk
+    template.kubevirt.io/editable: |
+      /objects[0].spec.template.spec.domain.cpu.sockets
+      /objects[0].spec.template.spec.domain.cpu.cores
+      /objects[0].spec.template.spec.domain.cpu.threads
+      /objects[0].spec.template.spec.domain.resources.requests.memory
+      /objects[0].spec.template.spec.domain.devices.disks
+      /objects[0].spec.template.spec.volumes
+      /objects[0].spec.template.spec.networks
+    template.openshift.io/bindable: 'false'
+    iconClass: icon-rhel
+    openshift.io/provider-display-name: Red Hat
+  labels:
+    app.kubernetes.io/name: common-templates
+    kubevirt.io/os: rhel8
+    template.kubevirt.io/default-os-variant: 'true'
+    template.kubevirt.io/type: base
+    workload.template.kubevirt.io/server: 'true'
+  name: vm-template-sap
+  namespace: sap-cnv
+objects:
+- apiVersion: kubevirt.io/v1
+  kind: VirtualMachine
+  metadata:
+    labels:
+      kubevirt.io/vm: vm-${NAME}
+    name: ${NAME}
+  spec:
+    dataVolumeTemplates:
+      - apiVersion: cdi.kubevirt.io/v1beta1
+        kind: DataVolume
+        metadata:
+          name: '${NAME}'
+        spec:
+          sourceRef:
+            kind: DataSource
+            name: '${DATA_SOURCE_NAME}'
+            namespace: '${DATA_SOURCE_NAMESPACE}'
+          storage:
+            resources:
+              requests:
+                storage: '${STORAGE_SIZE}'
+    running: true
+    template:
+      metadata:
+        labels:
+          subdomain: ansible
+          kubevirt.io/vm: vm-${NAME}
+      spec:
+        hostname: ${NAME}
+        subdomain: ansible
+        domain:
+          ioThreadsPolicy: shared
+          cpu:
+            cores: ${{CPU_CORES}}
+            threads: ${{CPU_THREADS}}
+            sockets: ${{CPU_SOCKETS}}
+            model: host-passthrough
+            isolateEmulatorThread: true
+            dedicatedCpuPlacement: true
+            features:
+              - name: x2apic
+                policy: require
+              - name: rdtscp
+                policy: require
+            numa:
+              guestMappingPassthrough : {}
+          devices:
+            blockMultiQueue: true
+            networkInterfaceMultiqueue: true
+            disks:
+            - disk:
+                bus: virtio
+              name: '${NAME}'
+            - disk:
+                bus: virtio
+              name: cloudinitdisk
+            - disk:
+                bus: virtio
+              name: downwardmetrics
+            interfaces:
+            - name: access-bridge-network-definition
+              bridge: {}
+              model: virtio
+              networkInterfaceMultiqueue: true
+          machine:
+            type: "pc-q35-rhel8.6.0"
+          resources:
+            requests:
+              memory: ${MEMORY}
+          memory:
+            hugepages:
+              pageSize: ${HUGEPAGES_PAGE_SIZE}
+        terminationGracePeriodSeconds: 180
+        volumes:
+        - dataVolume:
+            name: '${NAME}'
+          name: '${NAME}'
+        - cloudInitNoCloud:
+            userData: |-
+              #cloud-config
+              user: admin
+              password: admin
+              chpasswd: { expire: False }
+          name: cloudinitdisk
+        - downwardMetrics: {}
+          name: downwardmetrics
+        networks:
+        - multus:
+            networkName: access-bridge-network-definition
+          name: access-bridge-network-definition
+parameters:
+- description: Name for the new VM
+  name: NAME
+  generate: expression
+  from: 'sap-rhel8-[a-z0-9]{6}' 
+- description: Amount of memory
+  name: MEMORY
+  value: <Set Memory Size e.g. 4096Mi or 8Gi>
+- description: Amount of cores
+  name: CPU_CORES
+  value: "<Set Number of CPU Cores e.g. 4>"
+- description: Amount of threads
+  name: CPU_THREADS
+  value: "<Set Number of CPU Threads e.g. 1>"
+- description: Amount of sockets
+  name: CPU_SOCKETS
+  value: "<Set Number of CPU Sockets e.g. 1>"
+- description: Amount of hugepages
+  name: HUGEPAGES_PAGE_SIZE
+  value: "<Set Hugepage Size e.g. 1Gi>"
+- name: STORAGE_SIZE
+  description: Size of storage disk for VM
+  value: <Set Storage Size e.g. 100Gi>
+- name: DATA_SOURCE_NAME
+  description: Name of the DataSource to clone
+  value: rhel8
+- name: DATA_SOURCE_NAMESPACE
+  description: Namespace of the DataSource
+  value: openshift-virtualization-os-images
