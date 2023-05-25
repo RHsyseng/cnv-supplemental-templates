@@ -26,7 +26,7 @@ metadata:
     template.kubevirt.io/default-os-variant: 'true'
     template.kubevirt.io/type: base
     workload.template.kubevirt.io/server: 'true'
-  name: rhel8-sapnetwaver
+  name: rhel8-sapnetweaver
   namespace: sap-cnv
 objects:
 - apiVersion: kubevirt.io/v1
