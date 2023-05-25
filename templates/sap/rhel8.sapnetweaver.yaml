@@ -123,7 +123,7 @@ parameters:
 - description: Name for the new VM
   name: NAME
   generate: expression
-  from: 'sap-rhel8-[a-z0-9]{6}' 
+  from: 'rhel8-sapnetweaver-[a-z0-9]{6}'
 - description: Amount of memory
   name: MEMORY
   value: <Set Memory Size e.g. 4096Mi or 8Gi>
